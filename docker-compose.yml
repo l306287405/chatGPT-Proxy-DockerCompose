@@ -1,0 +1,66 @@
+version: '3'
+
+services:
+  app:
+    image: chenzhaoyu94/chatgpt-web # 总是使用 latest ,更新时重新 pull 该 tag 镜像即可
+    ports:
+      - "3002:3002"
+    environment:
+      # 二选一
+      OPENAI_API_KEY: sk-************
+      # 二选一
+      #      OPENAI_ACCESS_TOKEN: eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6Ik1UaEVOVUpHTkVNMVFURTRNMEZCTWpkQ05UZzVNRFUxUlRVd1FVSkRNRU13UmtGRVFrRXpSZyJ9.eyJodHRwczovL2FwaS5vcGVuYWkuY29tL3Byb2ZpbGUiOnsiZW1haWwiOiJ5ZmttdTh0eHd5QG91dGxvb2suY29tIiwiZW1haWxfdmVyaWZpZWQiOnRydWV9LCJodHRwczovL2FwaS5vcGVuYWkuY29tL2F1dGgiOnsidXNlcl9pZCI6InVzZXItVm1iSjdwR2Uxa2xwelFod0pmcFI0SkRRIn0sImlzcyI6Imh0dHBzOi8vYXV0aDAub3BlbmFpLmNvbS8iLCJzdWIiOiJhdXRoMHw2M2VmNjI4Yzk1ZTBkOGU3MGQ5YmI4ZGMiLCJhdWQiOlsiaHR0cHM6Ly9hcGkub3BlbmFpLmNvbS92MSIsImh0dHBzOi8vb3BlbmFpLm9wZW5haS5hdXRoMGFwcC5jb20vdXNlcmluZm8iXSwiaWF0IjoxNjc5NTM3Nzc1LCJleHAiOjE2ODA3NDczNzUsImF6cCI6IlRkSkljYmUxNldvVEh0Tjk1bnl5d2g1RTR5T282SXRHIiwic2NvcGUiOiJvcGVuaWQgcHJvZmlsZSBlbWFpbCBtb2RlbC5yZWFkIG1vZGVsLnJlcXVlc3Qgb3JnYW5pemF0aW9uLnJlYWQgb2ZmbGluZV9hY2Nlc3MifQ.eVgvGM7CELubsfhVe1rvraDogY22qJ05TUS1ojIpyWhj-vVj_ytWHaPFqJsYUby6d_j2_3WCpPKxOWJoSl95Ggvz9svsvKZI_IalrTDh0zeVAyZQGLrey2QKJDzy8hMhmxQ4cjSkY2rJUrR4ovpDi5gtAUz3FWDi7odBg_FOWJ3wjWMueGQoiyj0JNtMp37jzegExMMqgC-rGAEnnhv_O7Glb8d4498lgT_AL1Cr0EWdoPIJ43XnqG4EwH0Kf7FJsct4O5s1c9rWZ3ZGRFbtVRF3OZI4fYfYCcm6UDpc6AET6oRwlGZrf9md-C4EDjGADo_hoDWd1lIDwKIMNRjxeA
+      # API接口地址，可选，设置 OPENAI_API_KEY 时可用
+      OPENAI_API_BASE_URL: https://api.openai.com
+      # API模型，可选，设置 OPENAI_API_KEY 时可用
+      OPENAI_API_MODEL: gpt-3.5-turbo
+      #      # 访问权限密钥，可选
+      #      AUTH_SECRET_KEY: xxx
+      # 每小时最大请求次数，可选，默认无限
+      MAX_REQUEST_PER_HOUR: 0
+      # 超时，单位毫秒，可选
+      TIMEOUT_MS: 60000
+
+      #       反向代理，可选
+      #      API_REVERSE_PROXY: https://bypass.duti.tech/api/conversation
+
+      #       HTTPS 代理，可选，支持 http，https，socks5
+      #      SOCKS_PROXY_HOST: xxxx
+      #      SOCKS_PROXY_PORT: xxxx
+      HTTP_PROXY: http://clash-proxy:7890  # 设置环境变量 http_proxy，指向主机上的 ClashX 代理服务器
+      HTTPS_PROXY: http://clash-proxy:7890  # 设置环境变量 http_proxy，指向主机上的 ClashX 代理服务器
+    #      HTTP_PROXY: http://host.docker.internal:43210  # 设置环境变量 http_proxy，指向主机上的 ClashX 代理服务器
+    #      HTTPS_PROXY: http://host.docker.internal:43210  # 设置环境变量 http_proxy，指向主机上的 ClashX 代理服务器
+    networks:
+      - default
+    depends_on:
+      - clash-proxy
+
+  clash-proxy:
+    image: dreamacro/clash
+    container_name: clash-proxy
+    volumes:
+      - ./clash:/root/.config/clash
+    ports:
+      - "9090:9090"
+#      - "43210:7890" # ClashX 代理端口 除非要将端口开放给其它应用,否则不要取消注释
+#      - "43211:7891" # ClashX 代理端口 除非要将端口开放给其它应用,否则不要取消注释
+    restart: always
+    networks:
+      - default
+
+  #   Clash Dashboard
+  clash-dashboard:
+    image: centralx/clash-dashboard
+    container_name: clash-dashboard
+    ports:
+      - "3003:80"
+    restart: always
+    networks:
+      - default
+    depends_on:
+      - clash-proxy
+
+networks:
+  default:
+    driver: bridge
